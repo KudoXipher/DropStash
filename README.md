@@ -1,7 +1,4 @@
 # Welcome to Dropstash!
-[![Build Status](https://img.shields.io/travis/markdown-it/markdown-it-container/master.svg?style=flat)](https://travis-ci.org/markdown-it/markdown-it-container)
-[![NPM version](https://img.shields.io/npm/v/markdown-it-container.svg?style=flat)](https://www.npmjs.org/package/markdown-it-container)
-[![Coverage Status](https://img.shields.io/coveralls/markdown-it/markdown-it-container/master.svg?style=flat)](https://coveralls.io/r/markdown-it/markdown-it-container?branch=master)
 
 Dropstash is a simple file hosting platform that allows you to upload, download, and share files with ease. You can use Dropstash to store your files, share them with others, or collaborate on projects.
 
@@ -12,10 +9,9 @@ To download a file, simply click on the generated download link to redirect into
 We hope you enjoy using Dropstash!
 
 **Features**
-```
+
 - Drag and drop file uploads: Easily upload files by dragging and dropping them into the Dropstash window.
 - Built-in progress bar: See the progress of your file uploads with the built-in progress bar.
 - File expiration date: Automatically set a 1 Year expiration date for your files so that they will delete after.
 - Download file: Download files that you have uploaded to Dropstash.
 - Delete file: Delete files that you no longer need from Dropstash.
-```
