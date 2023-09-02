@@ -2,22 +2,16 @@
 
 Dropstash is a simple file hosting platform that allows you to upload, download, and share files with ease. You can use Dropstash to store your files, share them with others, or collaborate on projects.
 
-To get started, simply drag and drop your files into the Dropstash window. You can also browse your files by clicking on the "Files" tab.
+To get started, simply drag and drop your files into the Dropstash window. You can also browse your files by clicking on the "Choose Files" button.
 
-To download a file, simply click on the file name. To share a file, click on the "Share" button and enter the email addresses of the people you want to share the file with.
-
-Dropstash also has a built-in progress bar that shows you how far along your file is uploading or downloading.
+To download a file, simply click on the generated download link to redirect into the download page and click the download button. To share a file, click on the generated download link to copy and share the link to the people you want to share the file with.
 
 We hope you enjoy using Dropstash!
 
-You can also add the following *features* to your file hosting platform:
-Container(
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(10),
-  ),
-  child: Text("
-- A file previewer so users can see the contents of a file without having to download it.
-- A file password protection so users can protect their files from unauthorized access.
-- A file expiration date so users can set a time limit for how long their files will be available.
-  "),
-);
+*Features*
+
+- Drag and drop file uploads: Easily upload files by dragging and dropping them into the Dropstash window.
+- Built-in progress bar: See the progress of your file uploads with the built-in progress bar.
+- File expiration date: Automatically set a 1 Year expiration date for your files so that they will delete after.
+- Download file: Download files that you have uploaded to Dropstash.
+- Delete file: Delete files that you no longer need from Dropstash.
