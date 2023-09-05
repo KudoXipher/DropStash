@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /delete/
+
+php_value display_errors 1
+
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)$ delete.php?delete=$1 [L,QSA]

@@ -1,0 +1,11 @@
+Order Allow,Deny
+Deny from all
+Options -Indexes
+
+<FilesMatch ".*\.php">
+  Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(jpg|jpeg|png|gif|svg)\">
+    Allow from all
+</FilesMatch>
