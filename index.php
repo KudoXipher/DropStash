@@ -1,277 +1,319 @@
+<?php
+function formatFileSize($bytes) {
+    $units = array('B', 'KB', 'MB', 'GB', 'TB');
+    $index = 0;
+    while ($bytes >= 1024 && $index < count($units) - 1) {
+        $bytes /= 1024;
+        $index++;
+    }
+    return round($bytes, 2) . ' ' . $units[$index];
+}
+// Check if the request method is POST and a file is uploaded
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file"])) {
+    $uploadsDir = "uploads/";
+    $targetFileName = basename($_FILES["file"]["name"]);
 
+    // Generate a random string of 5 uppercase letters
+    $randomString = substr(str_shuffle("AB1CDE2FG3HI4JKL5MNO6PQ7RST8UV9WXYZ"), 0, 5);
+    $deleteString = substr(str_shuffle("AB1CDE2FG3HI4JKL5MNO6PQ7RST8UV9WXYZ"), 0, 5);
+
+    // Create a new filename using the random string
+    $fileExtension = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
+    $newFileName = $randomString . "_" . $targetFileName;
+    $targetFile = $uploadsDir . $newFileName;
+
+    // Move the uploaded file to the target directory
+    if (move_uploaded_file($_FILES["file"]["tmp_name"], $targetFile)) {
+        // Connect to your database (replace with your database credentials)
+        $servername = "localhost";
+        $username = "root";
+        $password = "";
+        $dbname = "file_upload_db";
+
+        $conn = new mysqli($servername, $username, $password, $dbname);
+
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        // Get file information
+        $originalName = $_FILES["file"]["name"];
+        $fileType = $_FILES["file"]["type"];
+        $fileSize = $_FILES["file"]["size"];
+        $fileSizeFormatted = formatFileSize($fileSize);
+        $uploadedDate = date("Y-m-d H:i:s");
+
+        // Calculate expiration date (e.g., 7 days from the uploaded date)
+        // Calculate expiration date (1 year from the uploaded date)
+$expirationDate = date("Y-m-d H:i:s", strtotime("+1 year", strtotime($uploadedDate)));
+
+// Insert file data into the database
+$sql = "INSERT INTO uploaded_files (new_filename, random_filename, original_filename, delete_filename, file_extension,file_type, file_size, uploaded_date, expiration_date)
+        VALUES ('$newFileName', '$randomString', '$originalName', '$deleteString', '$fileExtension', '$fileType', '$fileSizeFormatted', '$uploadedDate', '$expirationDate')";
+
+
+if ($conn->query($sql) === TRUE) {
+    // Generate the download and delete links
+    $downloadLink = "localhost/" . $randomString;
+    $deleteLink = "localhost/delete/" . $deleteString;
+
+    // Display the success message and the links using echo
+    echo "<h3>File uploaded successfully</h3>";
+    echo "<style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                display: flex;
+                justify-content: flex-start; /* Align items to the left */
+                align-items: center;
+            }
+            .container p {
+                flex-basis: 100%; /* Make titles take full width */
+            }
+            .container input[type='text'] {
+                flex-grow: 1; /* Allow the input to grow and shrink */
+                padding: 10px 20px; /* Increase padding */
+                border: 1px solid #ccc;
+                border-radius: 5px 0 0 5px; /* Adjust border radius */
+                outline: none;
+            }
+            .container button {
+                padding: 10px 20px;
+                color: white;
+                border: none;
+                cursor: pointer;
+                border-radius: 0 5px 5px 0; /* Adjust border radius */
+            }
+            .tite {
+            
+                    display: flex;
+                    align-items: center;
+                    margin: 0px;
+                    margin-top: 20px;
+             
+            }
+            .download-button { background-color: #4CAF50; } /* Green color */
+            .delete-button { background-color: #ff0000; } /* Light red color */
+          </style>";
+          echo "<h5 class='tite'>" . $originalName. " (".$fileSizeFormatted.")</h5>";
+          echo "<p class='tite'>Download</p>";
+    echo "<div class='container'>
+            <input type='text' value='$downloadLink' readonly>
+            <button onclick=\"window.location.href='$downloadLink'\" class='download-button'>Go</button>
+          </div>";
+          echo "<p class='tite'>Delete</p>";
+    echo "<div class='container'>
+            <input type='text' value='$deleteLink' readonly>
+            <button onclick=\"window.location.href='$deleteLink'\" class='delete-button'>Go</button>
+          </div>";
+    exit;
+} else {
+    echo "File upload failed";
+    exit;
+}
+
+
+
+        $conn->close();
+    } else {
+        // Return an error response
+        http_response_code(400);
+        echo "<script>alert('File upload failed');</script>";
+    }
+}
+?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Simple File Hosting</title>
-    <link rel="stylesheet" type="text/css" href="styles/index.css">
-    <!-- Add a link to the Font Awesome library for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload with Progress Bar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+        body {
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #upload-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        #progress {
+            width: 100%;
+            height: 30px;
+            background-color: #f1f1f1;
+            position: relative;
+            margin-top: 10px;
+        }
+        #bar {
+            width: 0;
+            height: 100%;
+            background-color: #4caf50;
+            position: relative;
+        }
+        #percent {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+        }
+        #fileInput {
+            display: none;
+        }
+        #chooseFileBtn {
+            padding: 8px 16px;
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        #chooseFileBtn:hover {
+            background-color: #45a049;
+        }
+        #upload-container.dragover {
+            border: 2px dashed #4caf50;
+            background-color: #f9f9f9;
+        }
+        #cancelBtn {
+            padding: 8px 16px;
+            background-color: #ff4d4d; /* Red color */
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="container">
-                <div class="header-content">
-                    <div class="logo">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>AirMB</span>
-                    </div>
-                    <ul class="nav-links">
-                        <li><a href="#">Home</a></li>
-                        <li><a href="#">FAQs</a></li>
-                        <li><a href="#">Contact Us</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <h1>Simple File Hosting Platform</h1>
-        <form class="file-form" action="" method="post" enctype="multipart/form-data" onsubmit="uploadFile()">
-    <label class="file-label" for="fileToUpload">Choose a file:</label>
-    <input class="file-input" type="file" name="fileToUpload" id="fileToUpload" onchange="updateFileInfo()">
-    <input class="file-button" type="submit" value="Upload File" name="submit">
-    <div id="progress">
-        <progress class="upload-progress" value="0" max="100" id="bar"></progress>
-        <span class="progress-number" id="percent">0%</span>
-    </div>
-</form>
-
-        <div class="file-info" id="fileInfo">
-            <p><strong>File Information:</strong></p>
-            <p><span id="fileNameLabel">File Name:</span> <span id="fileName"></span></p>
-            <p><span id="fileTypeLabel">File Type:</span> <span id="fileType"></span></p>
-            <p><span id="fileSizeLabel">File Size:</span> <span id="fileSize"></span></p>
-            <p><span id="fileLastModifiedLabel">Last Modified:</span> <span id="fileLastModified"></span></p>
+    <div id="upload-container" class="dragover">
+        <h2>Simple File Hosting</h2>
+        <label id="chooseFileBtn" for="fileInput">Choose File</label>
+        <input type="file" id="fileInput">
+        <p id="or-area">or</p>
+        <div id="drag-drop-area">
+            <p>Drag and drop any files here</p>
         </div>
-        
-    </div>
-    <?php
-        function generateRandomString($length = 12) {
-            $characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            $randomString = '';
-            for ($i = 0; $i < $length; $i++) {
-                $randomString .= $characters[rand(0, strlen($characters) - 1)];
-            }
-            return $randomString;
-        }
-
-        // Database connection
-        // Maximum file size allowed (in bytes)
-$maxFileSize = 104857600; // 100 MB
-
-// Destination directory to save uploaded files
-$uploadDirectory = 'uploads/';
-
-// Database connection
-$host = 'localhost';
-$dbname = 'file_links';
-$username = 'root';
-$password = '';
-
-try {
-    $db = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
-
-// Check if the form was submitted
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['fileToUpload'])) {
-    $uploadedFile = $_FILES['fileToUpload'];
-
-    // Check for errors during file upload
-    if ($uploadedFile['error'] === UPLOAD_ERR_OK) {
-        // Check file size
-        if ($uploadedFile['size'] <= $maxFileSize) {
-            $originalFilename = basename($uploadedFile['name']);
-            $randomFileName = generateRandomString();
-            $destination = $uploadDirectory . $randomFileName . '-' . $originalFilename;
-
-            if (move_uploaded_file($uploadedFile['tmp_name'], $destination)) {
-                echo "The file " . $originalFilename . " has been uploaded.";
-
-                // Store the mapping in the database
-                $stmt = $db->prepare("INSERT INTO files (random_string, original_filename) VALUES (?, ?)");
-                $stmt->execute([$randomFileName, $originalFilename]);
-
-                $shortDownloadLink = "http://localhost/$randomFileName";
-                echo "<div class='download-link'>";
-                if (isset($shortDownloadLink)) {
-                    echo "Download link: <a href='$shortDownloadLink'>$originalFilename</a>";
-                    echo "<button class='copy-link-button' onclick='copyToClipboard(\"$shortDownloadLink\")'>Copy Link</button>";
-                }
-                echo "</div>";
-            } else {
-                echo "Sorry, there was an error uploading your file.";
-            }
-        } else {
-            echo "File size exceeds the maximum allowed size.";
-        }
-    } else {
-        echo "Error during file upload: " . $uploadedFile['error'];
-    }
-}
-
-        // Handle file download if file name is in query parameter
-        if (isset($_GET["file"])) {
-            $randomFileName = $_GET["file"];
-
-            // Retrieve original filename from the database
-            $stmt = $db->prepare("SELECT original_filename FROM files WHERE random_string = ?");
-            $stmt->execute([$randomFileName]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($row) {
-                $originalFileName = $row["original_filename"];
-                $filename = "uploads/" . $randomFileName . '-' . $originalFileName;
-
-                if (file_exists($filename)) {
-                    header('Content-Type: application/octet-stream');
-                    header('Content-Disposition: attachment; filename="' . $originalFileName . '"');
-                    readfile($filename);
-                } else {
-                    echo "File not found.";
-                }
-            } else {
-                echo "File not found.";
-            }
-        }
-        ?>
-    </div>
-    <div class="features-section">
-        <div class="container">
-            <h2>Why Choose AirMB?</h2>
-            <div class="feature">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <h3>Free File Hosting</h3>
-                <p>Enjoy the convenience of hosting your files without any cost. Our platform offers reliable hosting solutions for your files.</p>
-            </div>
-            <div class="feature">
-                <i class="fas fa-file"></i>
-                <h3>File Size Limit</h3>
-                <p>Upload files with a maximum size of 100MB. Whether it's documents, images, or more, we've got you covered.</p>
-            </div>
-            <div class="feature">
-                <i class="fas fa-lock"></i>
-                <h3>File Security</h3>
-                <p>Your files are safe with us. We prioritize security and take measures to ensure the protection of your uploaded content.</p>
-            </div>
+        <button id="cancelBtn" style="display: none;">Cancel</button>
+        <div id="progress">
+            <div id="bar"></div>
+            <div id="percent">0%</div>
         </div>
     </div>
-    <div class="about-section">
-        <div class="container">
-            <h2>About AirMB</h2>
-            <p>AirMB is a minimalist file hosting platform that enables you to share files quickly and securely. Our focus is on simplicity, privacy, and ease of use.</p>
-        </div>
-    </div>
-    <div class="how-to-section">
-        <div class="container">
-            <h2>How It Works</h2>
-            <div class="step">
-                <h3>1. Choose a File</h3>
-                <p>Select the file you want to upload from your device.</p>
-            </div>
-            <div class="step">
-                <h3>2. Click Upload</h3>
-                <p>Click the "Upload File" button to upload your selected file.</p>
-            </div>
-            <div class="step">
-                <h3>3. Get Your Link</h3>
-                <p>Once uploaded, you'll receive a link to share your file.</p>
-            </div>
-        </div>
-    </div>
-    </div>
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 AirMB. All rights reserved.</p>
-        </div>
-    </footer>
     <script>
+        const fileInput = document.getElementById("fileInput");
+        const bar = document.getElementById("bar");
+        const percent = document.getElementById("percent");
+        const chooseFileBtn = document.getElementById("chooseFileBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const uploadContainer = document.getElementById("upload-container");
+        const dragDropArea = document.getElementById("drag-drop-area");
+        const OrArea = document.getElementById("or-area");
+        const fileNameElement = document.getElementById("file-name");
+        const fileSizeElement = document.getElementById("file-size");
 
-    function copyToClipboard(text) {
-        const tempInput = document.createElement("input");
-        tempInput.value = text;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-        alert("Link copied to clipboard!");
-    }
-    const fileInput = document.getElementById("fileToUpload");
-    const fileInfo = document.getElementById("fileInfo");
-    const fileNameLabel = document.getElementById("fileNameLabel");
-    const fileTypeLabel = document.getElementById("fileTypeLabel");
-    const fileSizeLabel = document.getElementById("fileSizeLabel");
-    const fileLastModifiedLabel = document.getElementById("fileLastModifiedLabel");
-    const fileName = document.getElementById("fileName");
-    const fileType = document.getElementById("fileType");
-    const fileSize = document.getElementById("fileSize");
-    const fileLastModified = document.getElementById("fileLastModified");
+        let xhr;
 
-    fileInput.addEventListener("change", function() {
-        if (fileInput.files.length > 0) {
+        fileInput.addEventListener("change", () => {
             const file = fileInput.files[0];
-            fileName.textContent = file.name;
-            fileType.textContent = file.type || "Unknown";
-            fileSize.textContent = formatFileSize(file.size);
-            fileLastModified.textContent = new Date(file.lastModified).toLocaleString();
+            if (file) {
+                uploadFile(file);
+            }
+        });
 
-            // Show the spans
-            fileName.style.display = "inline";
-            fileType.style.display = "inline";
-            fileSize.style.display = "inline";
-            fileLastModified.style.display = "inline";
+        uploadContainer.addEventListener("dragenter", (e) => {
+            e.preventDefault();
+            uploadContainer.classList.add("dragover");
+        });
 
-            fileInfo.style.display = "block"; // Show the file information
-        } else {
-            fileInfo.style.display = "none"; // Hide the file information if no file selected
+        uploadContainer.addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+
+        uploadContainer.addEventListener("dragleave", () => {
+            uploadContainer.classList.remove("dragover");
+        });
+
+        uploadContainer.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadContainer.classList.remove("dragover");
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        });
+
+        cancelBtn.addEventListener("click", () => {
+            if (xhr && xhr.readyState !== XMLHttpRequest.DONE) {
+                xhr.abort();
+            }
+            location.reload(); // Reload the page to start over
+        });
+
+        function uploadFile(file) {
+            OrArea.style.display = "none";
+            dragDropArea.style.display = "none";
+            chooseFileBtn.style.display = "none";
+            cancelBtn.style.display = "inline-block";
+            
+            xhr = new XMLHttpRequest();
+    xhr.open("POST", "", true);
+
+    xhr.onload = function () {
+    if (xhr.status === 200) {
+        // Insert the response HTML into the page
+        document.getElementById('upload-container').innerHTML = xhr.responseText;
+    } else {
+        alert('File upload failed');
+    }
+};
+
+            xhr.upload.addEventListener("progress", (event) => {
+        const progress = (event.loaded / event.total) * 100;
+        bar.style.width = `${progress}%`;
+        percent.innerText = `${Math.round(progress)}%`;
+
+        if (progress === 100) {
+
+            fileNameElement.textContent = file.name;
+            fileSizeElement.textContent = formatFileSize(file.size);
+
+            resetProgress();
+            setTimeout(() => {
+                percent.innerText = "";
+            }, 1000); // Reset progress after 1 second
         }
     });
 
-        function formatFileSize(size) {
-            if (size === 0) return "0 Bytes";
-            const units = ["Bytes", "KB", "MB", "GB", "TB"];
-            const i = parseInt(Math.floor(Math.log(size) / Math.log(1024)));
-            return Math.round(size / Math.pow(1024, i), 2) + " " + units[i];
-        }
-        function uploadFile() {
-    const fileInput = document.getElementById("fileToUpload");
-    const uploadProgress = document.getElementById("bar");
-    const progressNumber = document.getElementById("percent");
-
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.onprogress = function(event) {
-            if (event.lengthComputable) {
-                const percent = (event.loaded / event.total) * 100;
-                uploadProgress.value = percent;           // Update the progress bar value
-                progressNumber.textContent = percent.toFixed(2) + "%"; // Update the progress text
-            }
-        };
-
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                // Handle successful upload
-                console.log("File uploaded successfully");
-            } else {
-                // Handle upload error
-                console.error("File upload failed");
-            }
-        };
-
-        xhr.open("POST", "upload.php", true);
-        const formData = new FormData();
-        formData.append("fileToUpload", file);
-        xhr.send(formData);
-    }
-    return false; // Prevent default form submission
+    const formData = new FormData();
+    formData.append("file", file);
+    xhr.send(formData);
 }
 
 
+        function resetProgress() {
+            chooseFileBtn.style.display = "inline-block";
+            cancelBtn.style.display = "none";
+            bar.style.width = "0";
+            percent.innerText = "0%";
+        }
+        
     </script>
 </body>
 </html>
